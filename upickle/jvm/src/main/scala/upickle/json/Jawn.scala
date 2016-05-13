@@ -5,7 +5,7 @@ import collection.mutable
 import acyclic.file
 import scala.annotation.switch
 
-private[json] object JawnFacade extends MutableFacade[Js.Value] {
+object JawnFacade extends MutableFacade[Js.Value] {
   def jnull() = Js.Null
   def jfalse() = Js.False
   def jtrue() = Js.True
@@ -16,7 +16,7 @@ private[json] object JawnFacade extends MutableFacade[Js.Value] {
   def jobject(vs: mutable.ArrayBuffer[(String, Js.Value)]) = Js.Obj(vs:_*)
 }
 
-private[json] trait MutableFacade[J] extends Facade[J] {
+trait MutableFacade[J] extends Facade[J] {
   def jarray(vs: mutable.ArrayBuffer[J]): J
   def jobject(vs: mutable.ArrayBuffer[(String, J)]): J
 
@@ -95,25 +95,27 @@ sealed trait Renderer {
   }
 
   final def renderObject(sb: StringBuilder, depth: Int, it: Iterator[(String, Js.Value)], indent: Int): Unit = {
-    if (!it.hasNext) return { sb.append("{}"); () }
-    val (k0, v0) = it.next
-    sb.append('{')
-    renderIndent(sb, depth + 1, indent)
-    renderString(sb, k0)
-    sb.append(':')
-    if(indent != 0) sb.append(' ')
-    render(sb, depth + 1, v0, indent)
-    while (it.hasNext) {
-      val (k, v) = it.next
-      sb.append(',')
+    if (!it.hasNext) { sb.append("{}"); () }
+    else {
+      val (k0, v0) = it.next
+      sb.append('{')
       renderIndent(sb, depth + 1, indent)
-      renderString(sb, k)
+      renderString(sb, k0)
       sb.append(':')
-      if(indent != 0) sb.append(' ')
-      render(sb, depth + 1, v, indent)
+      if (indent != 0) sb.append(' ')
+      render(sb, depth + 1, v0, indent)
+      while (it.hasNext) {
+        val (k, v) = it.next
+        sb.append(',')
+        renderIndent(sb, depth + 1, indent)
+        renderString(sb, k)
+        sb.append(':')
+        if (indent != 0) sb.append(' ')
+        render(sb, depth + 1, v, indent)
+      }
+      renderIndent(sb, depth, indent)
+      sb.append('}')
     }
-    renderIndent(sb, depth, indent)
-    sb.append('}')
   }
 
   final def escape(sb: StringBuilder, s: String, unicode: Boolean): Unit = {
